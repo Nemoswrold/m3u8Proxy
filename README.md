@@ -9,6 +9,8 @@ cd m3u8proxy
 npm run start
 ```
 
+Then use NGINX to reverse proxy to your domain from localhost:3000
+
 ### Install Method 2: 
 
 Deploy with Vercel
@@ -16,7 +18,6 @@ Deploy with Vercel
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/joshholly/m3u8Proxy)
 
 
-Then use NGINX to reverse proxy to your domain from localhost:3000 
 
 ### Example:
 ```js
