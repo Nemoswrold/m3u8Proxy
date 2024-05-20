@@ -2,7 +2,11 @@ name: Deploy
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   repository_dispatch:
 
 jobs:
@@ -11,15 +15,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       # Add your build steps here
+      - name: Install dependencies
+        run: npm install
 
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     needs: build
     steps:
       - uses: actions/checkout@v2
-      - name: Publish
-        uses: cloudflare/wrangler-action@1.3.0
+      - name: Install dependencies
+        run: npm install
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
         with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          command: publish
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: '--prod' # Deploy to production
+          working-directory: '.' # Adjust if your project is in a subdirectory
+          alias: 'your-custom-domain.com' # Optional: specify a custom domain
