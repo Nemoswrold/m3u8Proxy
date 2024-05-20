@@ -2,7 +2,6 @@ import express from 'express';
 import fetch from 'node-fetch';
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 app.get('/', async (req, res) => {
   try {
@@ -21,22 +20,30 @@ app.get('/', async (req, res) => {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
-        Referer: refererUrl || "",
-        Origin: originUrl || "",
+        "Referer": refererUrl || "",
+        "Origin": originUrl || "",
       },
+      redirect: 'follow'
     });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch target URL: ${targetUrl}. Status: ${response.status}`);
+      return res.status(response.status).send(`Failed to fetch target URL: ${targetUrl}`);
+    }
 
     let modifiedM3u8;
     if (targetUrl.includes(".m3u8")) {
-      modifiedM3u8 = await response.text();
+      const text = await response.text();
       const targetUrlTrimmed = `${encodeURIComponent(
         targetUrl.replace(/([^/]+\.m3u8)$/, "").trim()
       )}`;
       const encodedUrl = encodeURIComponent(refererUrl);
       const encodedOrigin = encodeURIComponent(originUrl);
-      modifiedM3u8 = modifiedM3u8.split("\n").map((line) => {
+      modifiedM3u8 = text.split("\n").map((line) => {
         if (line.startsWith("#") || line.trim() === '') {
           return line;
+
+          //If ?all=yes is passed, proxy all requests by prepending all target URLs
         } else if (proxyAll === 'yes' && (line.startsWith('http') || line.startsWith('https'))) {
           return `${url.origin}?url=${line}`;
         }
@@ -48,12 +55,13 @@ app.get('/', async (req, res) => {
 
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Content-Type", response.headers.get("Content-Type") || "application/vnd.apple.mpegurl");
-    const responseBody = modifiedM3u8 ? modifiedM3u8 : Buffer.from(await response.arrayBuffer());
-    res.status(response.status).send(responseBody);
+    res.status(response.status).send(modifiedM3u8 || Buffer.from(await response.arrayBuffer()));
   } catch (e) {
+    console.error('Error processing request:', e);
     res.status(500).send(e.message);
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
