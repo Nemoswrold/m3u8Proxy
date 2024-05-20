@@ -1,16 +1,15 @@
-# m3u8 CloudflareWorker Proxy
+# m3u8 NodeJS Proxy
+
+Some places block Cloudflare IPs, so I forked the m3u8 Cloudflare worker proxy. This runs using NodeJS and Express rather than Cloudflare workers. 
 
 ### Install Method 1:
 ```bash
-git clone https://github.com/Gratenes/m3u8CloudflareWorkerProxy.git m3u8proxy
+git clone https://github.com/joshholly/m3u8Proxy.git m3u8proxy
 cd m3u8proxy
-npx wrangler login
-npx wrangler publish
+npm run start
 ```
 
-### Install Method 2:
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Gratenes/m3u8CloudflareWorkerProxy)
-
+Then use NGINX to reverse proxy to your domain from localhost:3000 
 
 ### Example:
 ```js
@@ -24,4 +23,3 @@ const encodedUrl = `https://m3u8.proxy.example/
 `
 ```
 
-> #### Cloudflare Workers Docs: https://developers.cloudflare.com/workers/get-started/guide/

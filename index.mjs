@@ -1,17 +1,19 @@
-addEventListener("fetch", (event) => {
-  event.respondWith(respondfetch(event.request));
-});
+import express from 'express';
+import fetch from 'node-fetch';
 
-async function respondfetch(request) {
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/', async (req, res) => {
   try {
-    const url = new URL(request.url);
+    const url = new URL(req.url, `http://${req.headers.host}`);
     const refererUrl = decodeURIComponent(url.searchParams.get("referer") || "");
     const targetUrl = decodeURIComponent(url.searchParams.get("url") || "");
     const originUrl = decodeURIComponent(url.searchParams.get("origin") || "");
     const proxyAll = decodeURIComponent(url.searchParams.get("all") || "");
-    
+
     if (!targetUrl) {
-      return new Response("Invalid URL", { status: 400 });
+      return res.status(400).send("Invalid URL");
     }
 
     const response = await fetch(targetUrl, {
@@ -33,29 +35,26 @@ async function respondfetch(request) {
       const encodedUrl = encodeURIComponent(refererUrl);
       const encodedOrigin = encodeURIComponent(originUrl);
       modifiedM3u8 = modifiedM3u8.split("\n").map((line) => {
-        if (line.startsWith("#") || line.trim() == '') {
+        if (line.startsWith("#") || line.trim() === '') {
           return line;
-        }
-        else if(proxyAll == 'yes' && line.startsWith('http')){ //https://yourproxy.com/?url=https://somevideo.m3u8&all=yes
+        } else if (proxyAll === 'yes' && (line.startsWith('http') || line.startsWith('https'))) {
           return `${url.origin}?url=${line}`;
         }
         return `?url=${targetUrlTrimmed}${line}${originUrl ? `&origin=${encodedOrigin}` : ""
-      }${refererUrl ? `&referer=${encodedUrl}` : ""
+        }${refererUrl ? `&referer=${encodedUrl}` : ""
           }`;
       }).join("\n");
     }
 
-    return new Response(modifiedM3u8 || response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type":
-          response.headers?.get("Content-Type") ||
-          "application/vnd.apple.mpegurl",
-      },
-    });
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Content-Type", response.headers.get("Content-Type") || "application/vnd.apple.mpegurl");
+    const responseBody = modifiedM3u8 ? modifiedM3u8 : Buffer.from(await response.arrayBuffer());
+    res.status(response.status).send(responseBody);
   } catch (e) {
-    return new Response(e.message, { status: 500 });
+    res.status(500).send(e.message);
   }
-}
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
