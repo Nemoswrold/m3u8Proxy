@@ -27,11 +27,6 @@ app.get('/', async (req, res) => {
       redirect: 'follow'
     });
 
-    if (!response.ok) {
-      console.error(`Failed to fetch target URL: ${targetUrl}. Status: ${response.status}`);
-      return res.status(response.status).send(`Failed to fetch target URL: ${targetUrl}`);
-    }
-
     let modifiedM3u8;
     if (targetUrl.includes(".m3u8")) {
       const text = await response.text();
