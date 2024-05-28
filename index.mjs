@@ -18,9 +18,6 @@ app.get('/', async (req, res) => {
 
     const response = await fetch(targetUrl, {
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
         "Referer": refererUrl || "",
         "Origin": originUrl || "",
       },
@@ -30,22 +27,20 @@ app.get('/', async (req, res) => {
     let modifiedM3u8;
     if (targetUrl.includes(".m3u8")) {
       const text = await response.text();
-      const targetUrlTrimmed = `${encodeURIComponent(
-        targetUrl.replace(/([^/]+\.m3u8)$/, "").trim()
-      )}`;
-      const encodedUrl = encodeURIComponent(refererUrl);
-      const encodedOrigin = encodeURIComponent(originUrl);
+      const baseUrl = targetUrl.replace(/\/[^/]+\.m3u8$/, '');
+      const encodedReferer = refererUrl ? `&referer=${encodeURIComponent(refererUrl)}` : '';
+      const encodedOrigin = originUrl ? `&origin=${encodeURIComponent(originUrl)}` : '';
+
       modifiedM3u8 = text.split("\n").map((line) => {
         if (line.startsWith("#") || line.trim() === '') {
           return line;
 
-          //If ?all=yes is passed, proxy all requests by prepending all target URLs
         } else if (proxyAll === 'yes' && (line.startsWith('http') || line.startsWith('https'))) {
-          return `${url.origin}?url=${line}`;
+          return `${url.origin}?url=${encodeURIComponent(line)}${encodedOrigin}${encodedReferer}`;
         }
-        return `?url=${targetUrlTrimmed}${line}${originUrl ? `&origin=${encodedOrigin}` : ""
-        }${refererUrl ? `&referer=${encodedUrl}` : ""
-          }`;
+
+        const resolvedUrl = new URL(line, baseUrl).href;
+        return `?url=${encodeURIComponent(resolvedUrl)}${encodedOrigin}${encodedReferer}`;
       }).join("\n");
     }
 
@@ -57,7 +52,6 @@ app.get('/', async (req, res) => {
     res.status(500).send(e.message);
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
