@@ -31,4 +31,4 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--prod' # Deploy to production
           working-directory: '.' # Adjust if your project is in a subdirectory
-          alias: 'your-custom-domain.com' # Optional: specify a custom domain
+          alias: 'not-movie-web.app' # Optional: specify a custom domain
